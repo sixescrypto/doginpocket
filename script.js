@@ -160,6 +160,11 @@ class DuckInPocket {
         
         // Play success sound (if you want to add audio)
         this.playSuccessSound();
+        
+        // Start minigame after 4 seconds
+        setTimeout(() => {
+            this.showMinigame();
+        }, 4000);
     }
     
     returnDuckToStart() {
@@ -294,6 +299,184 @@ class DuckInPocket {
             oscillator.stop(audioContext.currentTime + 0.5);
         } catch (e) {
             console.log('Audio not supported');
+        }
+    }
+    
+    showMinigame() {
+        this.minigameOverlay = document.getElementById('minigameOverlay');
+        this.minigameArea = document.getElementById('minigameArea');
+        this.gameScore = document.getElementById('gameScore');
+        this.gameTimer = document.getElementById('gameTimer');
+        this.minigameResult = document.getElementById('minigameResult');
+        
+        // Setup minigame events
+        document.getElementById('minigameClose').addEventListener('click', () => {
+            this.hideMinigame();
+        });
+        
+        // Show overlay
+        this.minigameOverlay.classList.add('active');
+        
+        // Start the game
+        this.startMinigame();
+    }
+    
+    startMinigame() {
+        this.score = 0;
+        this.timeLeft = 10;
+        this.gameActive = true;
+        this.treats = [];
+        
+        // Clear previous game
+        this.minigameArea.innerHTML = '';
+        this.minigameResult.classList.remove('show');
+        this.updateScore();
+        this.updateTimer();
+        
+        // Start spawning treats
+        this.spawnTreat();
+        this.treatSpawnInterval = setInterval(() => {
+            if (this.gameActive) {
+                this.spawnTreat();
+            }
+        }, 800);
+        
+        // Start countdown
+        this.gameTimer = setInterval(() => {
+            this.timeLeft--;
+            this.updateTimer();
+            
+            if (this.timeLeft <= 0) {
+                this.endMinigame();
+            }
+        }, 1000);
+    }
+    
+    spawnTreat() {
+        const treat = document.createElement('div');
+        treat.className = 'treat';
+        
+        // Random position within game area
+        const maxX = this.minigameArea.offsetWidth - 30;
+        const maxY = this.minigameArea.offsetHeight - 30;
+        const x = Math.random() * maxX;
+        const y = Math.random() * maxY;
+        
+        treat.style.left = x + 'px';
+        treat.style.top = y + 'px';
+        
+        // Add click handler
+        treat.addEventListener('click', () => {
+            if (this.gameActive) {
+                this.clickTreat(treat);
+            }
+        });
+        
+        this.minigameArea.appendChild(treat);
+        this.treats.push(treat);
+        
+        // Remove treat after 3 seconds if not clicked
+        setTimeout(() => {
+            if (treat.parentNode) {
+                treat.remove();
+                this.treats = this.treats.filter(t => t !== treat);
+            }
+        }, 3000);
+    }
+    
+    clickTreat(treat) {
+        treat.classList.add('clicked');
+        this.score++;
+        this.updateScore();
+        
+        // Play treat click sound
+        this.playTreatSound();
+        
+        setTimeout(() => {
+            if (treat.parentNode) {
+                treat.remove();
+            }
+        }, 300);
+        
+        this.treats = this.treats.filter(t => t !== treat);
+    }
+    
+    playTreatSound() {
+        try {
+            // Create a short, pleasant beep sound for treat collection
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Create a pleasant "ding" sound
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Start at 800Hz
+            oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1); // Rise to 1200Hz
+            
+            // Volume envelope for a pleasant sound
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        } catch (e) {
+            console.log('Audio not supported for treat sound');
+        }
+    }
+    
+    updateScore() {
+        this.gameScore.textContent = this.score;
+    }
+    
+    updateTimer() {
+        document.getElementById('gameTimer').textContent = this.timeLeft;
+    }
+    
+    endMinigame() {
+        this.gameActive = false;
+        clearInterval(this.treatSpawnInterval);
+        clearInterval(this.gameTimer);
+        
+        // Clear remaining treats
+        this.treats.forEach(treat => treat.remove());
+        this.treats = [];
+        
+        // Show results
+        this.showResults();
+    }
+    
+    showResults() {
+        let message = '';
+        if (this.score >= 8) {
+            message = 'Amazing! The dog is very happy! 🐕';
+        } else if (this.score >= 5) {
+            message = 'Good job! The dog enjoyed the treats! 🦴';
+        } else {
+            message = 'The dog is still hungry... Try again! 🐾';
+        }
+        
+        this.minigameResult.innerHTML = `
+            <h3>Game Over!</h3>
+            <p>You collected ${this.score} treats!</p>
+            <p>${message}</p>
+            <button class="play-again-btn" onclick="this.startMinigame()">Play Again</button>
+        `;
+        this.minigameResult.classList.add('show');
+        
+        // Bind play again button
+        this.minigameResult.querySelector('.play-again-btn').addEventListener('click', () => {
+            this.startMinigame();
+        });
+    }
+    
+    hideMinigame() {
+        this.minigameOverlay.classList.remove('active');
+        if (this.gameActive) {
+            this.endMinigame();
         }
     }
 }

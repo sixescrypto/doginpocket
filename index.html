@@ -93,6 +93,27 @@
             <div class="coin">$</div>
         </div>
 
+        <!-- Minigame Popup -->
+        <div class="minigame-overlay" id="minigameOverlay">
+            <div class="minigame-modal">
+                <div class="minigame-header">
+                    <h2>Treat Challenge!</h2>
+                    <button class="minigame-close" id="minigameClose">×</button>
+                </div>
+                <div class="minigame-content">
+                    <p>Click the treats to feed the dog!</p>
+                    <div class="minigame-score">Score: <span id="gameScore">0</span></div>
+                    <div class="minigame-area" id="minigameArea">
+                        <!-- Treats will be dynamically generated here -->
+                    </div>
+                    <div class="minigame-timer">Time: <span id="gameTimer">10</span>s</div>
+                </div>
+                <div class="minigame-result" id="minigameResult">
+                    <!-- Results will show here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Minimal Footer -->
         <footer class="minimal-footer">
         </footer>
